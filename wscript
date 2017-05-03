@@ -25,7 +25,7 @@ out = 'build'
 
 
 def options(opt):
-    opt.load('compiler_cxx compiler_c qt4')
+    opt.load('compiler_cxx compiler_c')
     opt.recurse('src')
 
     # whether or not to have all the asserts working
@@ -77,10 +77,6 @@ def check_tbb(conf):
 
 
 def configure(conf):
-    if sys.platform != 'linux2' and sys.platform != 'darwin':
-        print 'Please use the QtCreator project for building Gaia in Windows...'
-        sys.exit(1)
-
     print('→ configuring the project in ' + conf.path.abspath())
 
     conf.env.APP_VERSION = VERSION
@@ -102,10 +98,10 @@ def configure(conf):
         raise ValueError('mode should be either "debug" or "release"')
 
     if conf.options.optimized:
-        conf.env.CXXFLAGS += [ '-DNDEBUG', '-DQT_NO_DEBUG' ]
+        conf.env.CXXFLAGS += [ '-DNDEBUG' ]
 
     # super optimized flags
-    #conf.env['CXXFLAGS'] += [ '-Wall -Werror -O3 -fPIC -DNDEBUG -DQT_NO_DEBUG -ffast-math -fomit-frame-pointer -funroll-loops' ]
+    #conf.env['CXXFLAGS'] += [ '-Wall -Werror -O3 -fPIC -DNDEBUG -ffast-math -fomit-frame-pointer -funroll-loops' ]
 
 
     # NOTE: Debian Squeeze doesn't provide pkg-config files for libyaml, but
@@ -119,7 +115,7 @@ def configure(conf):
         conf.check_cfg(package='yaml-0.1', uselib_store='YAML',
                       args=['--cflags', '--libs'])
 
-    conf.env['USELIB'] = [ 'QTCORE', 'YAML' ]
+    conf.env['USELIB'] = [ 'YAML' ]
 
     # optional dependency: tbb, if asked for it
     conf.env['WITH_TBB'] = conf.options.tbb
@@ -128,8 +124,8 @@ def configure(conf):
 
     # optional dependency: QtNetwork for Cyclops Server
     conf.env['WITH_CYCLOPS'] = conf.options.cyclops
-    if conf.env['WITH_CYCLOPS']:
-        conf.env['USELIB'] += [ 'QTNETWORK' ]
+    # if conf.env['WITH_CYCLOPS']:
+    #  conf.env['USELIB'] += [ ]
 
     conf.env.DEFINES = ['GAIA_VERSION="%s"' % VERSION, 'GAIA_GIT_SHA="%s"' % GIT_SHA]
 
@@ -147,7 +143,7 @@ def configure(conf):
         # the cflags properly set
         conf.env.CXXFLAGS += [ '-I/usr/local/include' ]
 
-    conf.load('compiler_cxx compiler_c qt4')
+    conf.load('compiler_cxx compiler_c')
 
     #conf.env['LINKFLAGS'] += [ '--as-needed' ] # TODO do we need this flag?
 
@@ -174,8 +170,6 @@ def configure(conf):
     if sys.platform == 'linux2':
 
         opts = { 'prefix': prefix,
-             'qtlibdir': conf.env['LIB_QTCORE'] or '/usr/lib',
-             'qtincludedir': '-I' + ' -I'.join(conf.env['INCLUDES_QTCORE']),
              'version': VERSION,
              'tbblib': tbblib,
              }
@@ -183,21 +177,16 @@ def configure(conf):
         pcfile = '''prefix=%(prefix)s
         libdir=${prefix}/lib
         includedir=${prefix}/include
-        qtlibdir=%(qtlibdir)s
-        qtincludes=%(qtincludedir)s
 
         Name: libgaia2
         Description: A library for doing similarity in semimetric spaces
         Version: %(version)s
-        Libs: -L${libdir} -L${qtlibdir} -lgaia2 -lQtCore -lyaml %(tbblib)s
-        Cflags: -I${includedir} ${qtincludes}
+        Libs: -L${libdir} -lgaia2 -lyaml %(tbblib)s
+        Cflags: -I${includedir}
         ''' % opts
 
     elif sys.platform == 'darwin':
         opts = { 'prefix': prefix,
-             'qtlibdir': '-F' + conf.env['FRAMEWORKPATH_QTCORE'][0] +
-                         ' -framework ' + conf.env['FRAMEWORK_QTCORE'][0],
-             'qtincludedir': '-I' + ' -I'.join(conf.env['INCLUDES_QTCORE']),
              'version': VERSION,
              'tbblib': tbblib,
              }
@@ -205,14 +194,12 @@ def configure(conf):
         pcfile = '''prefix=%(prefix)s
         libdir=${prefix}/lib
         includedir=${prefix}/include
-        qtlibdir=%(qtlibdir)s
-        qtincludes=%(qtincludedir)s
 
         Name: libgaia2
         Description: A library for doing similarity in semimetric spaces
         Version: %(version)s
-        Libs: -L${libdir} ${qtlibdir} -lgaia2 -lyaml %(tbblib)s
-        Cflags: -I${includedir} ${qtincludes}
+        Libs: -L${libdir} -lgaia2 -lyaml %(tbblib)s
+        Cflags: -I${includedir}
         ''' % opts
 
 
